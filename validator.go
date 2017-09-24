@@ -1,3 +1,7 @@
+// Package validator provides a simple way to help run logical validations on structs.
+// Just define your validations as functions returning a Boolean result and failure message,
+// and specify a `GetValidations()` method on your struct listing which validations to run.
+// You then use `ValidateSerial()` or `ValidateParallel()` to execute your validations.
 package validator
 
 import "fmt"
