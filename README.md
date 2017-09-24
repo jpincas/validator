@@ -6,7 +6,7 @@ A simple package to help run logical validations on structs.  Just define your v
 
 ## Example
 
-```
+```golang
 package validator
 
 import "fmt"

@@ -2,13 +2,15 @@ package validator
 
 import "fmt"
 
-// Validateable interface
+// Validateable interface is implemented by supplying a list of validation functions to be executed
 type Validateable interface {
 	GetValidations() []Validation
 }
 
+//Validation is a validation function to be executed as part of the validation
 type Validation func(v Validateable) ValidationResult
 
+//ValidationResult is simply true/false combined with an error message to be used in case of failure
 type ValidationResult struct {
 	Pass           bool
 	FailureMessage string
@@ -21,6 +23,8 @@ func (vr ValidationResult) String() string {
 	return fmt.Sprintf("validation failed: %s", vr.FailureMessage)
 }
 
+//ValidateSerial executes validations functions one-at-a-time in order
+//It will exit on first fail, returning the corresponding failure message
 func ValidateSerial(v Validateable) ValidationResult {
 	validations := v.GetValidations()
 	for _, validation := range validations {
@@ -31,6 +35,9 @@ func ValidateSerial(v Validateable) ValidationResult {
 	return ValidationResult{true, ""}
 }
 
+//ValidateParallel executes validations in parallel.
+//It reads the validatio results as they become available,
+//and will exit immediately on receiving a fail
 func ValidateParallel(v Validateable) ValidationResult {
 	//Set up a buffered channel of size equal to the number of validations
 	validations := v.GetValidations()
