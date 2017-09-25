@@ -1,6 +1,7 @@
 package validator
 
 import (
+	"errors"
 	"testing"
 	"time"
 )
@@ -12,11 +13,14 @@ type maybeValid struct {
 func (m maybeValid) GetValidations() (vs []Validation) {
 	for _, validity := range m.validities {
 		x := validity //Important to cache this
-		vs = append(vs, func(v Validateable) ValidationResult {
+		vs = append(vs, func(v Validateable) error {
 			//Since there's no real logic going on here, add a 1ms pause to simulate
 			//a validation that actually does something
 			time.Sleep(1 * time.Millisecond)
-			return ValidationResult{x, "failed"}
+			if !x {
+				return errors.New("failed")
+			}
+			return nil
 		})
 	}
 	return
@@ -24,70 +28,70 @@ func (m maybeValid) GetValidations() (vs []Validation) {
 
 func TestOnePass(t *testing.T) {
 	m := maybeValid{validities: []bool{true}}
-	if validates := ValidateSerial(m); !validates.Pass {
+	if err := ValidateSerial(m); err != nil {
 		t.Fail()
 	}
-	if validates := ValidateParallel(m); !validates.Pass {
+	if err := ValidateParallel(m); err != nil {
 		t.Fail()
 	}
 }
 
 func TestMultiplePasses(t *testing.T) {
 	m := maybeValid{validities: []bool{true, true, true, true, true}}
-	if validates := ValidateSerial(m); !validates.Pass {
+	if err := ValidateSerial(m); err != nil {
 		t.Fail()
 	}
-	if validates := ValidateParallel(m); !validates.Pass {
+	if err := ValidateParallel(m); err != nil {
 		t.Fail()
 	}
 }
 
 func TestOneFail(t *testing.T) {
 	m := maybeValid{validities: []bool{false}}
-	if validates := ValidateSerial(m); validates.Pass {
+	if err := ValidateSerial(m); err == nil {
 		t.Fail()
 	}
-	if validates := ValidateParallel(m); validates.Pass {
+	if err := ValidateParallel(m); err == nil {
 		t.Fail()
 	}
 }
 
 func TestMultipleFails(t *testing.T) {
 	m := maybeValid{validities: []bool{false, false, false, false}}
-	if validates := ValidateSerial(m); validates.Pass {
+	if err := ValidateSerial(m); err == nil {
 		t.Fail()
 	}
-	if validates := ValidateParallel(m); validates.Pass {
+	if err := ValidateParallel(m); err == nil {
 		t.Fail()
 	}
 }
 
 func TestMixedPassFailFirst(t *testing.T) {
 	m := maybeValid{validities: []bool{false, true, true}}
-	if validates := ValidateSerial(m); validates.Pass {
+	if err := ValidateSerial(m); err == nil {
 		t.Fail()
 	}
-	if validates := ValidateParallel(m); validates.Pass {
+	if err := ValidateParallel(m); err == nil {
 		t.Fail()
 	}
 }
 
 func TestMixedPassFailMiddle(t *testing.T) {
 	m := maybeValid{validities: []bool{true, false, true}}
-	if validates := ValidateSerial(m); validates.Pass {
+	if err := ValidateSerial(m); err == nil {
 		t.Fail()
 	}
-	if validates := ValidateParallel(m); validates.Pass {
+	if err := ValidateParallel(m); err == nil {
 		t.Fail()
 	}
 }
 
 func TestMixedPassFailLast(t *testing.T) {
 	m := maybeValid{validities: []bool{true, true, false}}
-	if validates := ValidateSerial(m); validates.Pass {
+	if err := ValidateSerial(m); err == nil {
 		t.Fail()
 	}
-	if validates := ValidateParallel(m); validates.Pass {
+	if err := ValidateParallel(m); err == nil {
 		t.Fail()
 	}
 }

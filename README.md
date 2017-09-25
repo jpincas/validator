@@ -9,7 +9,10 @@ A simple package to help run logical validations on structs.  Just define your v
 ```golang
 package validator
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 //First, we define our customer struct.
 type customer struct {
@@ -22,18 +25,27 @@ type customer struct {
 //Next define some simple logical validations with accompanying error messages.
 //You could have one or more validations per validation function.
 //Here we validate only age...
-func isOver18(v Validateable) ValidationResult {
-	return ValidationResult{v.(customer).age > 18, "under age"}
+func isOver18(v Validateable) error {
+	if v.(customer).age < 18 {
+		return errors.New("Customer is under age")
+	}
+	return nil
 }
 
 //..whereas here we combine two validations in one function
 //with
-func isActive(v Validateable) ValidationResult {
-	return ValidationResult{v.(customer).agreedToTerms && !v.(customer).accountBlocked, "account inactive"}
+func isActive(v Validateable) error {
+	if !v.(customer).agreedToTerms || v.(customer).accountBlocked {
+		return errors.New("Customer account inactive")
+	}
+	return nil
 }
 
-func hasEmail(v Validateable) ValidationResult {
-	return ValidationResult{v.(customer).email != "", "no email"}
+func hasEmail(v Validateable) error {
+	if v.(customer).email == "" {
+		return errors.New("Customer has no email")
+	}
+	return nil
 }
 
 //Finally, we list the set of validations to perform for 'customer',
@@ -66,10 +78,11 @@ func Example() {
 	fmt.Println(r5)
 
 	// Output:
-	// validation passed
-	// validation failed: under age
-	// validation failed: account inactive
-	// validation failed: account inactive
-	// validation failed: no email
+	// <nil>
+	// Customer is under age
+	// Customer account inactive
+	// Customer account inactive
+	// Customer has no email
 }
+
 ```
